@@ -1,6 +1,6 @@
 import numpy as np
 from Layer import Layer
-from Neuron import epsilon
+from Neuron import Node
 
 
 class Network:
@@ -23,15 +23,31 @@ class Network:
             self.set_biases(biases)
 
     # learns the network using the given training data and the given learning rate
-    def learn(self, training_data: list[list], learning_rate: float):
+    def learn(self, training_data, learning_rate: float = .01):
         for single_train in training_data:
-            for input, target in single_train:
-                self.learn_single(input, target, learning_rate)
+            for inputs, target in single_train:
+                if type(inputs) is not np.ndarray:
+                    inputs = np.array(inputs)
+                if type(target) is not np.ndarray:
+                    target = np.array(target)
+                self.learn_single(inputs, target, learning_rate)
 
     # learns the network with a single training example
     def learn_single(self, inputs: np.ndarray, target: np.ndarray, learning_rate: float):
         output = self.feed_forward_matrices(inputs)
-        errors = target - output
+        output_error = np.array(target * np.log(output), dtype=object)
+        error_gradient_output = np.array(output - target, dtype=object)
+        if len(self.layers) == 1:
+            self.layers[0].learn_single(output_error, learning_rate)
+        else:
+            for i in range(len(self.layers) - 1, -1, -1):
+                if i == len(self.layers) - 1:
+                    self.layers[i].learn_single(output_error, learning_rate)
+                else:
+                    hidden_error = np.multiply(self.layers[i + 1].get_weights().T, output_error)
+                    print(hidden_error)
+                    hidden_error = np.multiply(hidden_error, np.multiply(output, 1 - output))
+                    self.layers[i].learn_single(hidden_error, learning_rate)
 
     # Initial function for the network, slower because of native python matrix multiplication
     # Deprecated
@@ -44,7 +60,7 @@ class Network:
 
     # Newer function for the propagation, faster because of numpy matrix multiplication
     def feed_forward_matrices(self, inputs: np.ndarray) -> np.ndarray:
-        if type(inputs) == list:
+        if type(inputs) is not np.ndarray:
             inputs = np.array(inputs)
         passthrough = inputs
         for layer in self.layers:
