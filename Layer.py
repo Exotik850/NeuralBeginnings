@@ -77,3 +77,13 @@ class Layer:
     def set_biases(self, param):
         for i in range(len(self.nodes)):
             self.nodes[i].set_bias(param[i])
+
+    def back_propagate(self, error, learning_rate):
+        for node in self.nodes:
+            node.back_propagate(error, learning_rate)
+
+    def get_errors(self):
+        errors = []
+        for node in self.nodes:
+            errors.append(node.get_error())
+        return np.array(errors)

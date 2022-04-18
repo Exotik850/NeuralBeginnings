@@ -23,31 +23,21 @@ class Network:
             self.set_biases(biases)
 
     # learns the network using the given training data and the given learning rate
-    def learn(self, training_data, learning_rate: float = .01):
-        for single_train in training_data:
-            for inputs, target in single_train:
-                if type(inputs) is not np.ndarray:
-                    inputs = np.array(inputs)
-                if type(target) is not np.ndarray:
-                    target = np.array(target)
-                self.learn_single(inputs, target, learning_rate)
+    def learn(self, training_data, learning_rate: float = .01, epochs: int = 100, batch_size: int = 1):
+        for i in range(epochs):
+            for j in range(0, len(training_data), batch_size):  # batch_size is the number of training examples
+                batch = training_data[j:j + batch_size]
+                self.learn_single(batch[0], batch[1], learning_rate)
 
     # learns the network with a single training example
     def learn_single(self, inputs: np.ndarray, target: np.ndarray, learning_rate: float):
-        output = self.feed_forward_matrices(inputs)
-        output_error = np.array(target * np.log(output), dtype=object)
-        error_gradient_output = np.array(output - target, dtype=object)
-        if len(self.layers) == 1:
-            self.layers[0].learn_single(output_error, learning_rate)
-        else:
-            for i in range(len(self.layers) - 1, -1, -1):
-                if i == len(self.layers) - 1:
-                    self.layers[i].learn_single(output_error, learning_rate)
-                else:
-                    hidden_error = np.multiply(self.layers[i + 1].get_weights().T, output_error)
-                    print(hidden_error)
-                    hidden_error = np.multiply(hidden_error, np.multiply(output, 1 - output))
-                    self.layers[i].learn_single(hidden_error, learning_rate)
+        if type(inputs) is not np.ndarray:
+            inputs = np.array(inputs)
+        if type(target) is not np.ndarray:
+            target = np.array(target)
+        output = self.feed_forward(inputs)
+        error = target - output
+        self.back_propagate(error, learning_rate)
 
     # Initial function for the network, slower because of native python matrix multiplication
     # Deprecated
@@ -102,3 +92,10 @@ class Network:
         for layer in self.layers:
             nodes.append(layer.get_nodes())
         return np.array(nodes)
+
+    def back_propagate(self, error, learning_rate):
+        for i in range(len(self.layers) - 1, -1, -1):
+            if i == len(self.layers) - 1:
+                self.layers[i].back_propagate(error, learning_rate)
+            else:
+                self.layers[i].back_propagate(self.layers[i + 1].get_errors(), learning_rate)

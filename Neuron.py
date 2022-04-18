@@ -26,6 +26,7 @@ class Node:
     # initialize the node with custom weights and bias
     # Cannot be initialized with default values
     def __init__(self, weights, bias, output=False, activation=None):
+        self.error = None
         self.output = output
         self.weights = np.array(weights)
         self.bias = bias
@@ -92,3 +93,16 @@ class Node:
         if self.output:
             self.weights = self.weights - np.multiply(learning_rate, error)
             self.bias = self.bias - np.multiply(learning_rate, error)
+
+    def back_propagate(self, error, learning_rate):
+        if self.output:
+            self.weights = self.weights - np.multiply(learning_rate, error)
+            self.bias = self.bias - np.multiply(learning_rate, error)
+        else:
+            # Calculate the error for the next layer
+            self.error = np.multiply(np.dot(error, self.weights.T), self.activation(self.bias))
+            self.weights = self.weights - np.multiply(learning_rate, np.dot(error, self.weights))
+            self.bias = self.bias - np.multiply(learning_rate, error)
+
+    def get_error(self):
+        return self.error
