@@ -1,22 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
-
-epsilon = 1e-8
-
-sigmoid = lambda x: np.divide(1, 1 + np.exp(-x))
-
-cross_entropy = lambda target, prediction: np.multiply(target, np.log(prediction + epsilon)) + np.multiply(1 - target,
-                                                                                                           np.log(
-                                                                                                               1 - prediction + epsilon))
-
-MSE = lambda target, prediction: np.sum(np.square(target - prediction)) / 2
-
-relu = lambda x: np.maximum(0, x)
-
-softmax = lambda x: np.exp(x) / np.sum(np.exp(x))
-
-RBF = lambda x: np.exp(-np.sum(-np.square(x)))
-
+from Equations import *
 
 @dataclass
 class Node:
@@ -28,6 +12,8 @@ class Node:
     def __init__(self, weights, bias, output=False, activation=None):
         self.error = None
         self.output = output
+        self.last_output = None
+        self.last_input = None
         self.weights = np.array(weights)
         self.bias = bias
         if activation:
@@ -52,7 +38,9 @@ class Node:
         if inputs.size != self.weights.size:
             raise ValueError("Inputs and weights must have the same length")
         # return sigmoid(np.dot(inputs, self.weights) + self.bias)
-        return self.activation(np.dot(inputs, self.weights) + self.bias)
+        self.last_input = inputs
+        self.last_output = self.activation(np.dot(inputs, self.weights) + self.bias)
+        return self.last_output
 
     # Forward propagation, using numpy, faster than native python functions
     def feed_forward_matrices(self, inputs: np.ndarray):
@@ -62,7 +50,9 @@ class Node:
         if inputs.size != self.weights.size:
             raise ValueError("Inputs and weights must have the same length")
         z = np.dot(inputs, self.weights) + self.bias
-        return self.activation(z.astype(float))
+        self.last_input = inputs
+        self.last_output = self.activation(z.astype(float))
+        return self.last_output
 
     def get_weights(self):
         return self.weights
@@ -101,6 +91,7 @@ class Node:
         else:
             # Calculate the error for the next layer
             self.error = np.multiply(np.dot(error, self.weights.T), self.activation(self.bias))
+
             self.weights = self.weights - np.multiply(learning_rate, np.dot(error, self.weights))
             self.bias = self.bias - np.multiply(learning_rate, error)
 
